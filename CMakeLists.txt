@@ -19,9 +19,16 @@ file(GLOB IMGUI_SOURCES
 	${TABLES_SOURCE}
 )
 
+
 set(IMGUI_STATIC "no" CACHE STRING "Build as a static library")
 set(IMGUI_FREETYPE "no" CACHE STRING "Build with freetype library")
 set(IMGUI_LIBRARIES )
+
+
+
+if (WIN32)
+    list(APPEND IMGUI_LIBRARIES imm32)
+endif()
 
 if(IMGUI_FREETYPE)
 	FIND_PACKAGE(freetype REQUIRED PATHS ${FREETYPE_PATH})
@@ -31,26 +38,32 @@ if(IMGUI_FREETYPE)
 endif(IMGUI_FREETYPE)
 
 #add library and link
+#1.工程设置 源文件以及库关联
+
 if (IMGUI_STATIC)
-    add_library(cimgui STATIC ${IMGUI_SOURCES})
+    CMAKELIB_PROJECT_SETUPPROJECT("bin" cimgui IMGUI_SOURCES IMGUI_LIBRARIES)
 else (IMGUI_STATIC)
-    add_library(cimgui SHARED ${IMGUI_SOURCES})
+    CMAKELIB_PROJECT_SETUPPROJECT("dll" cimgui IMGUI_SOURCES IMGUI_LIBRARIES)
 endif (IMGUI_STATIC)
 
+
+#2.当前库的编译设定
 target_compile_definitions(cimgui PUBLIC IMGUI_DISABLE_OBSOLETE_FUNCTIONS=1)
 if (WIN32)
     target_compile_definitions(cimgui PUBLIC IMGUI_IMPL_API=extern\t\"C\"\t__declspec\(dllexport\))
-    list(APPEND IMGUI_LIBRARIES imm32)
 else (WIN32)
     target_compile_definitions(cimgui PUBLIC IMGUI_IMPL_API=extern\t\"C\"\t)
 endif (WIN32)
 
+
+#3.当前库的包含路径
 target_include_directories(cimgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(cimgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 set_target_properties(cimgui PROPERTIES PREFIX "")
-target_link_libraries(cimgui ${IMGUI_LIBRARIES})
 
-#install
+
+
+#4.install 选项
 install(TARGETS cimgui
     RUNTIME DESTINATION  .
     LIBRARY DESTINATION  .
